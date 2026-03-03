@@ -28,7 +28,7 @@ jobs:
       - name: Run embedding builder
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          NEWSAPI_KEY: ${{ secrets.NEWS_API_KEY }}
         run: |
           python src/build_everything_embeddings.py
 
