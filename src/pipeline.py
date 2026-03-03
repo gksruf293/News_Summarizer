@@ -3,13 +3,7 @@
 from src.fetch_news import fetch_by_category
 from src.embed_rank import rank_articles_by_interest
 
-
-# NewsAPI 공식 category만 허용
-USER_CATEGORY = "technology"  # 여기만 바꾸면 됨
-TOP_K = 3
-
-
-def run_pipeline():
+def run_pipeline(USER_CATEGORY='technology', TOP_K = 3):
     print(f"Fetching news from category: {USER_CATEGORY}")
 
     articles = fetch_by_category(
