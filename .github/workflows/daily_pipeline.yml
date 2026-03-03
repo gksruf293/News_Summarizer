@@ -39,9 +39,9 @@ jobs:
           git push
 
       - name: Commit and Push changes
-      run: |
-        git config --global user.name "NewsBot"
-        git config --global user.email "bot@github.com"
-        git add docs/data/  # 특정 파일이 아닌 data 폴더 전체를 add
-        git commit -m "Add news for $(date +'%Y-%m-%d')" || echo "No changes"
-        git push
+        run: |
+          git config --global user.name "NewsBot"
+          git config --global user.email "bot@github.com"
+          git add docs/data/  # 특정 파일이 아닌 data 폴더 전체를 add
+          git commit -m "Add news for $(date +'%Y-%m-%d')" || echo "No changes"
+          git push
