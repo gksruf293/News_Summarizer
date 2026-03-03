@@ -126,3 +126,35 @@ async function loadDataByDate(date) {
         container.innerHTML = `<p class="error-msg">${date}에 생성된 뉴스 데이터가 아직 없습니다.</p>`;
     }
 }
+/* 특정 날짜 데이터 로드 */
+window.loadDataByDate = async function(date) {
+    const container = document.getElementById("results-container");
+    container.innerHTML = `<div class="status-msg">${date}의 뉴스를 분석 중입니다...</div>`;
+
+    try {
+        const [catRes, embRes] = await Promise.all([
+            fetch(`data/${date}/category.json`),
+            fetch(`data/${date}/embedding.json`)
+        ]);
+
+        if (!catRes.ok) throw new Error("No data");
+
+        categoryData = await catRes.json();
+        embeddingData = await embRes.json();
+
+        // 현재 선택된 탭 다시 렌더링
+        const currentTab = document.querySelector(".tab-btn.active").getAttribute("data-cat") || 'general';
+        renderCards(categoryData[currentTab] || []);
+
+    } catch (err) {
+        container.innerHTML = `
+            <div class="error-msg">
+                <p>📍 ${date}에는 생성된 뉴스 데이터가 없습니다.</p>
+                <button onclick="loadDataByDate('latest')">최신 뉴스 보기</button>
+            </div>`;
+    }
+};
+
+// 페이지 로드 시 최신 데이터(latest) 호출
+init(); 
+// init 내부에서 loadDataByDate('latest') 호출하도록 수정
