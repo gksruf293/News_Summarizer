@@ -10,15 +10,17 @@ async function init() {
     const searchBtn = document.getElementById("searchBtn");
     
     if (searchBtn) searchBtn.disabled = true;
-    container.innerHTML = `<div class="status-msg">AI 영문 분석 모델을 로드 중입니다...</div>`;
+    container.innerHTML = `<div class="status-msg">AI 언어 모델 로드 중...</div>`;
 
     try {
+        // 브라우저 로컬 시맨틱 검색을 위한 모델 로드
         extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
         console.log("✅ AI Model Loaded");
         if (searchBtn) { searchBtn.disabled = false; searchBtn.innerText = "AI 시맨틱 검색"; }
         await loadDataByDate('latest');
     } catch (err) {
-        container.innerHTML = `<div class="error-msg">초기화 중 오류가 발생했습니다. 새로고침 해주세요.</div>`;
+        console.error("Init Error:", err);
+        container.innerHTML = `<div class="error-msg">모델 로드 실패. 페이지를 새로고침 하세요.</div>`;
     }
 }
 
@@ -31,15 +33,16 @@ window.loadDataByDate = async function(date) {
         ]);
         
         categoryData = await catRes.json();
-        embeddingData = embRes.ok ? await embRes.json() : [];
+        const embJson = await embRes.json();
+        embeddingData = Array.isArray(embJson) ? embJson : [];
         
-        console.log(`📦 Data Loaded | Categories: ${Object.keys(categoryData).length} | Embeddings: ${embeddingData.length}`);
+        console.log(`📊 Data Loaded | Embeddings: ${embeddingData.length}`);
         
         const defaultCat = categoryData['general']?.length > 0 ? 'general' : Object.keys(categoryData)[0];
         renderCards(categoryData[defaultCat] || []);
     } catch (err) {
         console.error("Fetch Error:", err);
-        container.innerHTML = `<div class="error-msg">📍 데이터를 불러올 수 없습니다. (날짜: ${date})</div>`;
+        container.innerHTML = `<div class="error-msg">데이터 로드 실패 (날짜: ${date})</div>`;
     }
 };
 
@@ -47,23 +50,24 @@ window.handleSearch = async function() {
     const query = document.getElementById("interestInput").value.trim();
     if (!query || !extractor) return;
     
-    if (!embeddingData || embeddingData.length === 0) {
-        alert("검색 가능한 뉴스 데이터가 없습니다.");
+    if (embeddingData.length === 0) {
+        alert("현재 검색 가능한 뉴스 데이터가 없습니다. 파이프라인이 생성 중일 수 있습니다.");
         return;
     }
 
     const container = document.getElementById("results-container");
-    container.innerHTML = `<div class="status-msg">'${query}' 관련 소식을 분석 중입니다...</div>`;
+    container.innerHTML = `<div class="status-msg">'${query}' 관련 뉴스 분석 중...</div>`;
 
     const output = await extractor(query, { pooling: 'mean', normalize: true });
     const userVector = Array.from(output.data);
 
+    // 코사인 유사도 계산 및 정렬
     const scored = embeddingData.map(art => ({
         ...art,
         score: cosineSimilarity(userVector, art.embedding)
     })).sort((a, b) => b.score - a.score);
 
-    renderCards(scored.slice(0, 12));
+    renderCards(scored.slice(0, 10));
 };
 
 function cosineSimilarity(a, b) {
@@ -77,9 +81,8 @@ function cosineSimilarity(a, b) {
 function renderCards(articles) {
     const container = document.getElementById("results-container");
     container.innerHTML = "";
-    
-    if (!articles || articles.length === 0) {
-        container.innerHTML = `<p class="status-msg">해당 조건의 뉴스가 없습니다.</p>`;
+    if (articles.length === 0) {
+        container.innerHTML = `<p class="status-msg">표시할 뉴스가 없습니다.</p>`;
         return;
     }
 
@@ -94,7 +97,7 @@ function renderCards(articles) {
             <div class="card-info">
                 ${scoreTag}
                 <h3>${art.title}</h3>
-                <p>${preview.slice(0, 90)}...</p>
+                <p>${preview.slice(0, 80)}...</p>
             </div>
         `;
         card.onclick = () => openModal(art);
@@ -111,13 +114,12 @@ window.openModal = (article) => {
 };
 
 window.updateSummaryLevel = (level) => {
-    if (!currentSelectedArticle.summaries) return;
     const data = currentSelectedArticle.summaries[level];
     document.getElementById("summary-text").innerHTML = `
         <div class="english-box" onclick="toggleTranslation()">
             <p class="en-text">${data.en}</p>
             <p class="ko-text" id="ko-translation" style="display:none;">🔍 ${data.ko}</p>
-            <small style="color: #3b82f6; display:block; margin-top:10px;">💡 문장을 클릭하면 해석이 나옵니다.</small>
+            <small style="color: #3b82f6; display:block; margin-top:10px;">💡 문장을 클릭하면 한국어 해석이 나타납니다.</small>
         </div>
     `;
     document.querySelectorAll(".level-btn").forEach(btn => btn.classList.remove("active"));
