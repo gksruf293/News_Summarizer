@@ -36,7 +36,7 @@ def generate_multi_summaries(text):
     for level, prompt in prompts.items():
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "너는 뉴스 교육 콘텐츠 제작자야. 반드시 한국어로 응답해."},
                     {"role": "user", "content": f"{prompt}\n\n내용: {text[:3000]}"}
