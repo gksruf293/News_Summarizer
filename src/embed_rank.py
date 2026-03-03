@@ -78,7 +78,7 @@ def rank_articles_by_interest(
     top_articles = [article for similarity, article in scored_articles[:top_k]]
 
     print("\nTop ranked articles:")
-    for sim, art in scored_articles[:top_k]:
+    for sim, art in scored_articles:
         print(f"Score: {sim:.4f} | {art['title']}")
 
     return top_articles
