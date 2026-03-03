@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI News: Multi-Level Summary</title>
+    <title>AI News: English Study Mode</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <div class="header-content">
-            <h1>AI News Summarizer</h1>
-            <p>초·중·고 수준별 맞춤형 뉴스 요약 서비스</p>
+            <h1>AI News English Study</h1>
+            <p>매일 배달되는 뉴스 요약으로 영어 실력을 키워보세요!</p>
             
             <div class="search-bar-row">
                 <input type="date" id="datePicker" value="2026-03-03">
                 <div class="input-group">
-                    <input type="text" id="interestInput" placeholder="관심 있는 주제를 입력하세요 (예: 우주 개발, AI의 미래)">
+                    <input type="text" id="interestInput" placeholder="관심 있는 영문 기사 검색 (예: Apple, Tesla)">
                     <button onclick="handleSearch()" id="searchBtn">AI 시맨틱 검색</button>
                 </div>
             </div>
@@ -23,10 +23,10 @@
     </header>
 
     <nav class="tabs">
-        <button class="tab-btn active" data-cat="general" onclick="loadCategory('general', this)">전체</button>
-        <button class="tab-btn" data-cat="technology" onclick="loadCategory('technology', this)">테크</button>
-        <button class="tab-btn" data-cat="science" onclick="loadCategory('science', this)">과학</button>
-        <button class="tab-btn" data-cat="business" onclick="loadCategory('business', this)">비즈니스</button>
+        <button class="tab-btn active" onclick="loadCategory('general', this)">전체</button>
+        <button class="tab-btn" onclick="loadCategory('technology', this)">테크</button>
+        <button class="tab-btn" onclick="loadCategory('science', this)">과학</button>
+        <button class="tab-btn" onclick="loadCategory('business', this)">비즈니스</button>
     </nav>
 
     <main id="results-container" class="news-grid">
@@ -36,11 +36,11 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <div class="modal-header">
-                <h2 id="modal-title">뉴스 제목</h2>
+                <h2 id="modal-title">News Title</h2>
                 <div class="level-selector">
-                    <button id="btn-elementary" class="level-btn" onclick="updateSummaryLevel('elementary')">초등 수준</button>
-                    <button id="btn-middle" class="level-btn" onclick="updateSummaryLevel('middle')">중등 수준</button>
-                    <button id="btn-high" class="level-btn" onclick="updateSummaryLevel('high')">고등 수준</button>
+                    <button id="btn-elementary" class="level-btn" onclick="updateSummaryLevel('elementary')">Level 1 (Easy)</button>
+                    <button id="btn-middle" class="level-btn" onclick="updateSummaryLevel('middle')">Level 2 (Normal)</button>
+                    <button id="btn-high" class="level-btn" onclick="updateSummaryLevel('high')">Level 3 (Advanced)</button>
                 </div>
             </div>
             <div class="modal-body">
@@ -48,7 +48,7 @@
                     </div>
             </div>
             <div class="modal-footer">
-                <a id="modal-link" target="_blank" class="origin-link">원문 기사 보러가기</a>
+                <a id="modal-link" target="_blank" class="origin-link">Read Original Article</a>
             </div>
         </div>
     </div>
