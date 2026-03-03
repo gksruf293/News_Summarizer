@@ -1,3 +1,7 @@
+# main.py
+
+import json
+from datetime import datetime
 from src.scheduler import should_run_today
 from src.pipeline import run_pipeline
 
@@ -9,4 +13,14 @@ if __name__ == "__main__":
     if not should_run_today():
         print("Pipeline skipped today.")
     else:
-        run_pipeline()
+        top_articles = run_pipeline()
+
+        output = {
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "articles": top_articles
+        }
+    
+        with open("data/todays_news.json", "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+
+    print("todays_news.json generated.")
