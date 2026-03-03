@@ -32,16 +32,21 @@ jobs:
 
       - name: Commit and Push changes
         run: |
-          git config --global user.name "NewsBot"
-          git config --global user.email "bot@github.com"
-          git add docs/data/*.json
-          git commit -m "Update daily news with AI summaries" || echo "No changes to commit"
-          git push
-
-      - name: Commit and Push changes
-        run: |
-          git config --global user.name "NewsBot"
-          git config --global user.email "bot@github.com"
-          git add docs/data/  # 특정 파일이 아닌 data 폴더 전체를 add
-          git commit -m "Add news for $(date +'%Y-%m-%d')" || echo "No changes"
-          git push
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 1. 새로 생성된 모든 데이터 폴더를 스테이징
+          git add docs/data/
+          
+          # 2. 변경사항이 있을 때만 커밋
+          if ! git diff --cached --quiet; then
+            git commit -m "Update news for $(date +'%Y-%m-%d')"
+            
+            # 3. 리모트의 변경사항을 가져와서 현재 커밋을 그 위로 재배치 (충돌 방지)
+            git pull --rebase origin main
+            
+            # 4. 푸시
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
