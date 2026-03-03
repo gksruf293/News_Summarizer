@@ -6,7 +6,6 @@ import requests
 from openai import OpenAI
 from src.fetch_news import fetch_by_category, fetch_everything, get_full_text
 
-# 클라이언트 초기화
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 HF_TOKEN = os.getenv("HF_TOKEN")
 HF_API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
@@ -17,35 +16,33 @@ def query_hf_embedding(text):
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
     for _ in range(3):
         try:
-            response = requests.post(HF_API_URL, headers=headers, json={"inputs": text}, timeout=10)
+            response = requests.post(HF_API_URL, headers=headers, json={"inputs": text}, timeout=15)
             if response.status_code == 200:
                 return response.json()
-            elif response.status_code == 503:
-                time.sleep(15)
-                continue
+            time.sleep(10)
         except:
             pass
     return None
 
 def generate_multi_summaries(text):
-    """영어 학습용: 영문 요약 ||| 한글 번역 생성"""
+    """영어 학습용 요약 생성 (English ||| Korean)"""
     prompts = {
-        "elementary": "Summarize in 2 very simple sentences for a beginner. (A1 level)",
-        "middle": "Summarize in 3 clear sentences with intermediate vocabulary. (B1 level)",
-        "high": "Summarize in a logical, professional manner for advanced learners. (C1 level)"
+        "elementary": "Summarize in 2 simple sentences (A1).",
+        "middle": "Summarize in 3 clear sentences (B1).",
+        "high": "Summarize in professional English (C1)."
     }
     summaries = {}
     
     if not text or len(text.strip()) < 100:
-        return {k: {"en": "Content too short to summarize.", "ko": "요약하기에 본문이 너무 짧습니다."} for k in prompts}
+        return {k: {"en": "Text too short.", "ko": "본문이 너무 짧습니다."} for k in prompts}
 
     for level, prompt in prompts.items():
         try:
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are an English teacher. Summarize in English and provide Korean translation. Format: English text ||| Korean translation"},
-                    {"role": "user", "content": f"{prompt}\n\nContent: {text[:3500]}"}
+                    {"role": "system", "content": "You are an English teacher. Format: English ||| Korean"},
+                    {"role": "user", "content": f"{prompt}\n\nContent: {text[:3000]}"}
                 ],
                 temperature=0.3
             )
@@ -55,64 +52,50 @@ def generate_multi_summaries(text):
                 summaries[level] = {"en": en.strip(), "ko": ko.strip()}
             else:
                 summaries[level] = {"en": res_text, "ko": "(번역 준비 중)"}
-        except Exception as e:
-            summaries[level] = {"en": "Error occurred during summary.", "ko": "요약 중 오류 발생"}
+        except:
+            summaries[level] = {"en": "Summary error.", "ko": "요약 오류"}
     return summaries
 
 def run_pipeline():
     today_str = datetime.now().strftime("%Y-%m-%d")
-    print(f"🚀 Running Pipeline for Date: {today_str}")
+    print(f"🚀 Running Pipeline for {today_str}")
 
-    # 1️⃣ 카테고리별 뉴스 수집
-    final_category_data = {}
+    # 1. 카테고리 뉴스 수집
+    cat_results = {}
     for cat in CATEGORY_LIST:
-        print(f"--- Processing Category: {cat} ---")
         articles = fetch_by_category(category=cat, page_size=5)
         processed = []
         for art in articles:
             full_text = get_full_text(art["url"])
-            target_text = full_text if len(full_text) > 200 else art.get("description", "")
-            
-            print(f"Summarizing: {art['title'][:30]}...")
-            summaries = generate_multi_summaries(target_text)
-            
+            summaries = generate_multi_summaries(full_text if len(full_text)>200 else art.get("description", ""))
             processed.append({
-                "title": art["title"],
-                "url": art["url"],
-                "image": art.get("image"),
-                "source": art.get("source"),
-                "summaries": summaries
+                "title": art["title"], "url": art["url"], 
+                "image": art.get("urlToImage"), "summaries": summaries
             })
-        final_category_data[cat] = processed
+        cat_results[cat] = processed
 
-    # 2️⃣ 검색용 임베딩 생성 (범용 쿼리로 0개 방지)
-    print("\n--- Generating Search Embeddings ---")
-    interest_news = fetch_everything(query="world news", page_size=20)
-    embedding_data = []
-    for art in interest_news:
-        text_to_embed = f"{art['title']}. {art.get('description', '')}"
-        emb = query_hf_embedding(text_to_embed)
+    # 2. 검색용 임베딩 뉴스 수집 (오늘의 이슈 위주)
+    print("--- Generating Today's Search Embeddings ---")
+    raw_articles = fetch_everything(query="AI OR technology OR economy", page_size=40)
+    emb_results = []
+    for art in raw_articles:
+        text = f"{art['title']}. {art.get('description','')}"
+        emb = query_hf_embedding(text)
         if emb and isinstance(emb, list):
-            embedding_data.append({
-                "title": art["title"],
-                "url": art["url"],
-                "description": art.get("description"),
-                "image": art.get("image"),
-                "embedding": emb,
-                "summaries": generate_multi_summaries(art.get("description", art["title"]))
+            emb_results.append({
+                "title": art["title"], "url": art["url"], "image": art.get("urlToImage"),
+                "embedding": emb, "summaries": generate_multi_summaries(text)
             })
     
-    print(f"✅ Generated {len(embedding_data)} embeddings")
+    print(f"🔥 Final Embedding Count: {len(emb_results)}")
 
-    # 3️⃣ 저장
-    for path_dir in [f"docs/data/{today_str}", "docs/data/latest"]:
-        os.makedirs(path_dir, exist_ok=True)
-        with open(f"{path_dir}/category.json", "w", encoding="utf-8") as f:
-            json.dump(final_category_data, f, ensure_ascii=False, indent=2)
-        with open(f"{path_dir}/embedding.json", "w", encoding="utf-8") as f:
-            json.dump(embedding_data, f, ensure_ascii=False, indent=2)
-
-    print(f"✅ Data saved successfully in docs/data/{today_str}")
+    # 3. 데이터 저장
+    for path in [f"docs/data/{today_str}", "docs/data/latest"]:
+        os.makedirs(path, exist_ok=True)
+        with open(f"{path}/category.json", "w", encoding="utf-8") as f:
+            json.dump(cat_results, f, ensure_ascii=False, indent=2)
+        with open(f"{path}/embedding.json", "w", encoding="utf-8") as f:
+            json.dump(emb_results, f, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     run_pipeline()
