@@ -88,3 +88,30 @@ def _clean_articles(raw_articles: List[Dict]) -> List[Dict]:
         })
 
     return cleaned
+
+def fetch_everything(query: str, language: str = "en", page_size: int = 100, page: int = 1):
+    url = "https://newsapi.org/v2/everything"
+
+    params = {
+        "q": query,
+        "language": language,
+        "pageSize": page_size,
+        "page": page,
+        "apiKey": os.getenv("NEWSAPI_KEY")
+    }
+
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+
+    articles = response.json().get("articles", [])
+
+    formatted = []
+    for a in articles:
+        formatted.append({
+            "title": a["title"],
+            "url": a["url"],
+            "description": a.get("description", ""),
+            "text": (a.get("content") or "")[:2000]
+        })
+
+    return formatted
