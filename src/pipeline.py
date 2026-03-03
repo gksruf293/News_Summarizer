@@ -26,26 +26,34 @@ def query_hf_embedding(text):
     return None
 
 def generate_multi_summaries(text):
-    """OpenAI GPT를 이용한 초/중/고 3단계 요약"""
+    """OpenAI를 이용한 3단계 요약 (모델 업데이트 및 에러 핸들링)"""
     prompts = {
-        "elementary": "초등학생이 이해하기 쉽게 아주 쉬운 단어와 비유를 들어 2줄로 요약해줘.",
+        "elementary": "초등학생이 이해하기 쉽게 아주 쉬운 단어로 2줄 요약해줘.",
         "middle": "중학생 수준으로 핵심 용어를 설명하며 3줄 내외로 요약해줘.",
-        "high": "고등학생 이상의 수준으로 논리적이고 전문적인 문체로 상세히 요약해줘."
+        "high": "고등학생 수준으로 논리적이고 전문적인 문체로 상세히 요약해줘."
     }
     summaries = {}
+    
+    # 본문이 너무 짧으면 요약 시도 안 함
+    if not text or len(text.strip()) < 50:
+        return {k: "요약을 생성할 수 있는 본문 내용이 부족합니다." for k in prompts}
+
     for level, prompt in prompts.items():
         try:
+            # 모델을 gpt-4o-mini로 변경 (더 안정적임)
             response = openai.ChatCompletion.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "너는 뉴스 교육 콘텐츠 제작자야. 반드시 한국어로 응답해."},
-                    {"role": "user", "content": f"{prompt}\n\n내용: {text[:3000]}"}
+                    {"role": "system", "content": "너는 뉴스 교육 전문가야. 반드시 한국어로 응답해."},
+                    {"role": "user", "content": f"{prompt}\n\n내용: {text[:3500]}"}
                 ],
-                temperature=0.5
+                temperature=0.3 # 결과의 일관성을 위해 낮춤
             )
-            summaries[level] = response.choices[0].message.content
-        except:
+            summaries[level] = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"❌ OpenAI API 에러 ({level}): {e}")
             summaries[level] = "요약을 생성하는 중 오류가 발생했습니다."
+            
     return summaries
 
 def run_pipeline():
