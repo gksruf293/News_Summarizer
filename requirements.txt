@@ -1,4 +1,6 @@
+huggingface_hub
 requests
+openai
 numpy
 newspaper3k
 lxml_html_clean
