@@ -23,7 +23,7 @@ def get_embedding(text):
         return None
 
 def generate_multi_summaries(title, description):
-    """GPT를 사용하여 초/중/고 3단계 요약을 한 번에 생성"""
+    """레벨별(3, 5, 7줄) 확실한 차이를 둔 요약 생성"""
     source_text = description if description and len(description) > 50 else title
     
     if not source_text or len(source_text) < 10:
@@ -31,22 +31,21 @@ def generate_multi_summaries(title, description):
         return {k: msg for k in ["elementary", "middle", "high"]}
 
     try:
-        # 한 번의 호출로 3개 레벨을 모두 생성하도록 지시 (비용 및 속도 최적화)
         resp = client_openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": """You are a professional English teacher. 
-                Summarize the given news into 3 levels. 
-                Level 1: Simple words for kids. 
-                Level 2: Standard high school level. 
-                Level 3: Advanced vocabulary and complex structures.
-                Output format exactly:
-                Level 1: English Summary ||| 한국어 요약
-                Level 2: English Summary ||| 한국어 요약
-                Level 3: English Summary ||| 한국어 요약"""},
+                Create three distinct levels of summaries:
+                
+                1. Level 1 (Elementary): Exactly 3 short sentences. Use basic vocabulary (CEFR A1).
+                2. Level 2 (Middle): Exactly 5 sentences. Use intermediate vocabulary and compound sentences (CEFR B1-B2).
+                3. Level 3 (High): Exactly 7 sentences. Use advanced academic vocabulary, complex structures, and idioms (CEFR C1).
+                
+                Output format for each level:
+                Level X: [English sentences] ||| [Korean translation]"""},
                 {"role": "user", "content": source_text[:1200]}
             ],
-            temperature=0.5
+            temperature=0.4
         )
         
         content = resp.choices[0].message.content.strip()
@@ -56,10 +55,13 @@ def generate_multi_summaries(title, description):
         summaries = {}
         
         for i, line in enumerate(lines[:3]):
-            # 'Level X:' 접두사 제거 후 분리
             clean_line = line.split(":", 1)[-1] if ":" in line else line
             en, ko = clean_line.split("|||")
-            summaries[levels[i]] = {"en": en.strip(), "ko": ko.strip()}
+            # 문장 간 줄바꿈이 필요한 경우 브라우저 표시를 위해 처리
+            summaries[levels[i]] = {
+                "en": en.strip().replace(". ", ".<br>"), 
+                "ko": ko.strip().replace(". ", ".<br>")
+            }
             
         return summaries
     except Exception as e:
