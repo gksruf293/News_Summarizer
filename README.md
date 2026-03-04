@@ -31,7 +31,7 @@
 
 ## 🧠 Key Features & Technical Challenges
 
-### **1. Adaptive Multi-Level Summarization (3-5-7 Rule)**
+### **1. Adaptive Multi-Level Summarization **
 단순 요약을 넘어 교육적 효과를 극대화하기 위해 레벨별 가이드라인을 엄격히 적용했습니다.
 * **Level 1 (Elementary)**: 핵심 정보 중심의 단문 3줄 (기초 어휘 위주)
 * **Level 2 (Middle)**: 문장 간 연결성을 강조한 중문 5줄 (중급 표현 포함)
@@ -41,9 +41,6 @@
 기존의 키워드 매칭 방식이 가진 문맥 파악의 한계를 극복했습니다.
 * **Challenge**: 웹 브라우저 내 대량의 벡터 연산 시 발생하는 성능 저하.
 * **Solution**: 가벼운 `all-MiniLM` 모델 사용 및 효율적인 데이터 구조 설계를 통해 100개 이상의 기사에 대한 유사도 연산을 0.1초 내외로 단축했습니다.
-
-### **3. Robust Data Handling**
-* **Image Failback**: 뉴스 API의 이미지 링크가 유효하지 않거나 406 에러 발생 시, 사용자 경험을 위해 **Custom Placeholder(🖼️ No Image)** 로직을 구현하여 UI 일관성을 유지했습니다.
 
 ---
 
