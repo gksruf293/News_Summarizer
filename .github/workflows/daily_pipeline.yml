@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests newspaper3k openai lxml_html_clean
+          pip install -r requirements.txt
 
       - name: Run AI Pipeline
         env:
